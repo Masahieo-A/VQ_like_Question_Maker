@@ -6,14 +6,22 @@ import { buildFewShotPrompt, selectSimilarExamples } from "../lib/insightDataset
 type GrammarId =
   | "auto"
   | "tense"
-  | "inanimate-subject"
-  | "present-perfect"
-  | "conditional"
-  | "progressive"
-  | "future"
+  | "perfect"
   | "passive"
+  | "modal"
   | "infinitive"
-  | "structure";
+  | "gerund"
+  | "participle"
+  | "subjunctive"
+  | "relative"
+  | "comparative"
+  | "negation"
+  | "inanimate-subject"
+  | "noun-construction"
+  | "conjunction"
+  | "preposition"
+  | "interrogative"
+  | "pronoun";
 
 type GrammarOption = {
   id: GrammarId;
@@ -93,56 +101,104 @@ const grammarOptions: GrammarOption[] = [
   {
     id: "tense",
     label: "時制",
-    description: "現在・過去・未来・完了など、時間の捉え方を中心に問います。",
-    keywords: "yesterday / now / will / for / since",
+    description: "現在・過去・未来など、時間の捉え方と動詞の形を問います。",
+    keywords: "yesterday / now / ago / last / next / was / were",
   },
   {
-    id: "inanimate-subject",
-    label: "無生物主語",
-    description: "人ではない主語が、どのような結果や変化を引き起こすかを問います。",
-    keywords: "make / bring / allow / prevent / cause",
-  },
-  {
-    id: "present-perfect",
-    label: "現在完了形",
-    description: "過去から現在へのつながりを has/have done で考えます。",
-    keywords: "has / have + 過去分詞",
-  },
-  {
-    id: "conditional",
-    label: "時・条件の副詞節",
-    description: "if / when 節では、未来の内容でも現在形を使う点に注目します。",
-    keywords: "if / when / unless",
-  },
-  {
-    id: "progressive",
-    label: "進行形",
-    description: "am/are/is doing で、今まさに進行中の動作を表します。",
-    keywords: "be + doing",
-  },
-  {
-    id: "future",
-    label: "未来表現",
-    description: "will do / be going to do など、これから起こることを表します。",
-    keywords: "will / be going to",
+    id: "perfect",
+    label: "完了形",
+    description: "has/have/had + 過去分詞で過去から現在・過去へのつながりを考えます。",
+    keywords: "has / have / had + 過去分詞 / for / since / already / just",
   },
   {
     id: "passive",
     label: "受動態",
     description: "be done で「〜される」を作るときの be 動詞と過去分詞に注目します。",
-    keywords: "be + 過去分詞",
+    keywords: "be + 過去分詞 / by",
+  },
+  {
+    id: "modal",
+    label: "助動詞",
+    description: "must / can / should / may など、話し手の判断・意志・推量を表します。",
+    keywords: "must / can / should / may / might / would / could / have to",
   },
   {
     id: "infinitive",
     label: "不定詞",
-    description: "to do が目的・原因・名詞的用法など、文中で何の働きをするかを考えます。",
+    description: "to do が名詞・形容詞・副詞として文中で何の役割を担うかを考えます。",
     keywords: "to + 動詞の原形",
   },
   {
-    id: "structure",
-    label: "文構造・語法",
-    description: "主語・動詞・目的語・修飾語の関係や語法を問います。",
-    keywords: "SVOC / 前置詞 / 語法",
+    id: "gerund",
+    label: "動名詞",
+    description: "doing が名詞として主語・目的語・補語になる用法を問います。",
+    keywords: "doing / enjoy / finish / stop / mind / avoid",
+  },
+  {
+    id: "participle",
+    label: "分詞",
+    description: "doing / done が形容詞として名詞を修飾する用法や分詞構文を問います。",
+    keywords: "現在分詞 / 過去分詞 / 分詞構文",
+  },
+  {
+    id: "subjunctive",
+    label: "仮定法",
+    description: "事実と異なる仮定を If S' did, S would do の形で考えます。",
+    keywords: "if / were / would / could / had done / wish",
+  },
+  {
+    id: "relative",
+    label: "関係詞",
+    description: "who / which / that / where などで名詞を後置修飾する構造を問います。",
+    keywords: "who / which / that / where / when / whose / whom",
+  },
+  {
+    id: "comparative",
+    label: "比較",
+    description: "比較級・最上級・同等比較など、程度の比べ方を問います。",
+    keywords: "more / most / -er / -est / as ~ as / than / less",
+  },
+  {
+    id: "negation",
+    label: "否定",
+    description: "not / never / no / hardly など、否定を表す語の使い方を問います。",
+    keywords: "not / never / no / hardly / scarcely / seldom / rarely",
+  },
+  {
+    id: "inanimate-subject",
+    label: "無生物主語",
+    description: "人ではない主語が、どのような結果や変化を引き起こすかを問います。",
+    keywords: "make / bring / allow / prevent / cause / enable",
+  },
+  {
+    id: "noun-construction",
+    label: "名詞構文",
+    description: "動詞・形容詞を名詞化して表現する構造を問います。",
+    keywords: "-tion / -ness / -ment / -ity / -ance / of",
+  },
+  {
+    id: "conjunction",
+    label: "接続詞",
+    description: "when / if / because / although など、節をつなぐ接続詞の用法を問います。",
+    keywords: "when / if / because / although / while / since / until / unless",
+  },
+  {
+    id: "preposition",
+    label: "前置詞",
+    description: "in / on / at / by / with など、前置詞の使い分けを問います。",
+    keywords: "in / on / at / by / with / for / to / from / of / about",
+  },
+  {
+    id: "interrogative",
+    label: "疑問詞",
+    description: "what / who / where / when / how など、疑問詞を含む構造を問います。",
+    keywords: "what / who / where / when / why / how / which",
+  },
+  {
+    id: "pronoun",
+    label: "代名詞",
+    description: "it / one / that / those など、代名詞の指示内容や格の形を問います。",
+    keywords: "it / one / that / those / this / them / their",
   },
 ];
 
@@ -247,14 +303,23 @@ function translateSentence(sentence: string): string {
 }
 
 const tokenPatterns = {
-  presentPerfect: /\b(has|have)\s+([a-z]+(?:ed|en)|been|done|gone|seen|written|known|lived|studied|visited|worked)\b/i,
-  conditional: /\b(If|When|Unless)\s+([^,.]+),\s*([^.!?]+)/i,
-  progressive: /\b(am|are|is)\s+([a-z]+ing)\b/i,
-  future: /\b(will)\s+([a-z]+)\b/i,
-  passive: /\b(am|are|is|was|were|be|been)\s+([a-z]+ed|made|known|seen|written|built|given|called)\b/i,
+  perfect: /\b(has|have|had)\s+([a-z]+(?:ed|en)|been|done|gone|seen|written|known|lived|studied|visited|worked|had)\b/i,
+  passive: /\b(am|are|is|was|were|be|been)\s+([a-z]+ed|made|known|seen|written|built|given|called|used|replaced|stolen)\b/i,
+  modal: /\b(must|can|could|should|may|might|would|ought to|have to|has to|had to|need to)\b/i,
+  subjunctive: /\bIf\s+[^,]+(were|had\s+[a-z]+|[a-z]+ed)[^,]*,\s*[^.]+\b(would|could|might)\b/i,
+  relative: /\b(who|which|where|when|whose|whom)\b(?!\s*\?)/i,
+  comparative: /\b(more|most|less|least|better|best|worse|worst|fewer|fewest)\s+[a-z]|\b[a-z]+(?:er|est)\b.*\b(than|as)\b|\bas\s+[a-z]+\s+as\b/i,
+  negation: /\b(not|never|no|nobody|nothing|nowhere|hardly|scarcely|seldom|rarely|without)\b/i,
+  conjunction: /\b(because|although|though|while|since|until|unless|after|before|whenever|wherever|as soon as)\b|\bIf\s+[a-z]/i,
+  interrogative: /^(What|Who|Where|When|Why|How|Which)\b/i,
   infinitive: /\b(to)\s+([a-z]+)\b/i,
-  tense: /\b(will|yesterday|tomorrow|now|ago|for|since|last|next|has|have|was|were|is|are|am)\b/i,
-  inanimateSubject: /^(Self-driving cars|This|That|The [A-Z]?[a-z-]+|[A-Z][a-z-]+(?:ing)? [a-z-]+)\s+(will\s+)?(make|made|makes|bring|brings|brought|allow|allows|allowed|prevent|prevents|prevented|cause|causes|caused)\b/i,
+  gerund: /\b(enjoy|finish|stop|mind|avoid|consider|suggest|practice|keep|imagine|give up|look forward to)\s+([a-z]+ing)\b|\b([A-Z][a-z]+ing)\s+(is|are|was|were)\b/i,
+  participle: /\b([a-z]+(?:ing|ed))\s+(?:by\s+)?[a-z]/i,
+  nounConstruction: /\b([a-z]+(?:tion|ness|ment|ity|ance|ence|al|ure))\b/i,
+  preposition: /\b(in|on|at|by|with|for|from|of|about|into|through|during|after|before|between|among|over|under|near|around)\b/i,
+  pronoun: /\b(it|one|those|these|them|their|its|our|us|your)\b/i,
+  tense: /\b(yesterday|tomorrow|now|ago|last|next|was|were|is|are|am|will|going to)\b/i,
+  inanimateSubject: /^(Self-driving cars|This|That|The [A-Z]?[a-z-]+|[A-Z][a-z-]+(?:ing)? [a-z-]+)\s+(will\s+)?(make|made|makes|bring|brings|brought|allow|allows|allowed|prevent|prevents|prevented|cause|causes|caused|enable|enables|enabled)\b/i,
 };
 
 function getGrammarOption(grammarId: GrammarId) {
@@ -313,62 +378,16 @@ function makeDraftFromFocus(
 
 const grammarFocuses: GrammarFocus[] = [
   {
-    ...getGrammarOption("conditional"),
-    detector: (sentence) => tokenPatterns.conditional.test(sentence),
+    ...getGrammarOption("perfect"),
+    detector: (sentence) => tokenPatterns.perfect.test(sentence),
     blanker: (sentence, blankCount) => {
-      const match = sentence.match(tokenPatterns.conditional);
+      const match = sentence.match(tokenPatterns.perfect);
       if (!match) return null;
-      return makeDraftFromFocus(sentence, blankCount, [match[1], "will"], {
-        japanese: "時・条件を表す節と主節の時制関係を確認する英文。",
-        tip: "条件を表すまとまりはどこまで? 未来の内容でも副詞節内はどの時制にする? 主節では未来をどう表す?",
-        explanation:
-          "時・条件を表す副詞節では、未来の内容でも現在形を使う。主節では will do などで未来に起こることを表す。",
-        wordsToUse: "if / when / present tense / will / main clause",
-      });
-    },
-  },
-  {
-    ...getGrammarOption("present-perfect"),
-    detector: (sentence) => tokenPatterns.presentPerfect.test(sentence),
-    blanker: (sentence, blankCount) => {
-      const match = sentence.match(tokenPatterns.presentPerfect);
-      if (!match) return null;
-      return makeDraftFromFocus(sentence, blankCount, [match[1], match[2], "for", "since"], {
-        japanese: "過去に始まった状態・経験・完了が、現在とどうつながっているかを考える英文。",
-        tip: "過去の一点だけを述べている? それとも現在とのつながりを述べている? 主語に合わせる助動詞は?",
-        explanation:
-          "現在完了形は has/have + 過去分詞で表す。for や since など期間を表す語句があるときは、過去から現在まで続く状態として考える。",
-        wordsToUse: "has / have / past participle / for / since",
-      });
-    },
-  },
-  {
-    ...getGrammarOption("progressive"),
-    detector: (sentence) => tokenPatterns.progressive.test(sentence),
-    blanker: (sentence, blankCount) => {
-      const match = sentence.match(tokenPatterns.progressive);
-      if (!match) return null;
-      return makeDraftFromFocus(sentence, blankCount, [match[1], match[2], "now"], {
-        japanese: "今まさに行われている動作を表す英文。",
-        tip: "「今しているところ」を表す形は? be 動詞は主語に合わせてどう変える? 動詞の語尾は?",
-        explanation:
-          "現在進行形は am/are/is doing の形で、今まさに行われている動作や一時的な状況を表す。",
-        wordsToUse: "am / are / is / doing / now",
-      });
-    },
-  },
-  {
-    ...getGrammarOption("future"),
-    detector: (sentence) => tokenPatterns.future.test(sentence),
-    blanker: (sentence, blankCount) => {
-      const match = sentence.match(tokenPatterns.future);
-      if (!match) return null;
-      return makeDraftFromFocus(sentence, blankCount, [match[1], match[2], "tomorrow", "next"], {
-        japanese: "未来に起こると予想される事柄を表す英文。",
-        tip: "「〜するだろう」と未来の予想を表す助動詞は? 助動詞の後ろの動詞の形は?",
-        explanation:
-          "will do は未来に起こると予想される事柄を表す一般的な形。助動詞 will の後ろには動詞の原形を置く。",
-        wordsToUse: "will / base verb / tomorrow / next",
+      return makeDraftFromFocus(sentence, blankCount, [match[1], match[2], "for", "since", "already", "just", "ever", "never"], {
+        japanese: "過去から現在・過去へのつながりを表す英文。",
+        tip: "時制はいつからいつまでのつながりを表している? has/have/had の後ろの動詞の形は? for と since の使い分けは?",
+        explanation: "完了形は has/have/had + 過去分詞で表す。現在完了は過去から現在、過去完了は大過去から過去へのつながりを示す。",
+        wordsToUse: "has / have / had / past participle / for / since / already / just",
       });
     },
   },
@@ -380,39 +399,77 @@ const grammarFocuses: GrammarFocus[] = [
       if (!match) return null;
       return makeDraftFromFocus(sentence, blankCount, [match[1], match[2], "by"], {
         japanese: "主語が動作を受ける側になっている英文。",
-        tip: "主語は動作をする側? される側? 「〜される」を表す基本の形は?",
-        explanation:
-          "受動態は be 動詞 + 過去分詞で表す。be 動詞は主語と時制に合わせて、過去分詞は動詞ごとの形を確認する。",
+        tip: "主語は動作をする側? される側? 「〜される」を表す基本の形は? be 動詞は時制に合わせてどう変わる?",
+        explanation: "受動態は be 動詞 + 過去分詞で表す。be 動詞は主語と時制に合わせて変化し、過去分詞は動詞ごとの形を確認する。",
         wordsToUse: "be / past participle / by",
       });
     },
   },
   {
-    ...getGrammarOption("infinitive"),
-    detector: (sentence) => tokenPatterns.infinitive.test(sentence),
+    ...getGrammarOption("subjunctive"),
+    detector: (sentence) => tokenPatterns.subjunctive.test(sentence),
     blanker: (sentence, blankCount) => {
-      const match = sentence.match(tokenPatterns.infinitive);
-      if (!match) return null;
-      return makeDraftFromFocus(sentence, blankCount, [match[1], match[2]], {
-        japanese: "to do のまとまりが文中で働いている英文。",
-        tip: "to の後ろに続く動詞の形は? to do のまとまりは文の中で何の役割をしている?",
-        explanation:
-          "不定詞は to + 動詞の原形で表す。名詞・形容詞・副詞のように働き、文脈によって意味を判断する。",
-        wordsToUse: "to / base verb / purpose / adjective use",
+      const match = sentence.match(tokenPatterns.subjunctive);
+      const preferred = match ? [match[1], match[2], "would", "could"] : ["would", "could", "were"];
+      return makeDraftFromFocus(sentence, blankCount, preferred.filter(Boolean), {
+        japanese: "現実とは異なる仮定を述べている英文。",
+        tip: "これは今の事実? 過去の事実? それと違うことを述べるには動詞・助動詞をどの形にする?",
+        explanation: "仮定法では動詞を過去形や過去完了形にして、実際には起こっていないことを表す。If S' did, S would do が仮定法過去の基本形。",
+        wordsToUse: "if / were / would / could / had done / wish",
       });
     },
   },
   {
-    ...getGrammarOption("tense"),
-    detector: (sentence) => tokenPatterns.tense.test(sentence),
+    ...getGrammarOption("relative"),
+    detector: (sentence) => tokenPatterns.relative.test(sentence),
     blanker: (sentence, blankCount) => {
-      const tenseWords = sentence.match(/\b(will|has|have|was|were|is|are|am|yesterday|tomorrow|now|ago|for|since|last|next)\b/gi) ?? [];
-      return makeDraftFromFocus(sentence, blankCount, tenseWords, {
-        japanese: "時を表す語句と動詞の形の対応を考える英文。",
-        tip: "この文はいつの出来事・状態を表している? 時を示す語句はどれ? その時間に合う動詞の形は?",
-        explanation:
-          "時制問題では、まず時を表す語句や文脈を見つけ、現在・過去・未来・完了・進行のどれで捉えるかを決める。",
-        wordsToUse: "tense marker / present / past / future / perfect / progressive",
+      const match = sentence.match(tokenPatterns.relative);
+      const preferred = match ? [match[1]] : ["who", "which", "that"];
+      return makeDraftFromFocus(sentence, blankCount, preferred, {
+        japanese: "関係詞が名詞を後ろから修飾している英文。",
+        tip: "先行詞は何? 関係詞節の中で関係詞はどんな役割をしている(主格/目的格/所有格)? 先行詞が人か物かで関係詞は変わる?",
+        explanation: "関係代名詞は先行詞と関係詞節をつなぐ。who は人、which は物・事、that は両方に使える。",
+        wordsToUse: "who / which / that / where / when / whose / whom",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("modal"),
+    detector: (sentence) => tokenPatterns.modal.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const match = sentence.match(tokenPatterns.modal);
+      if (!match) return null;
+      return makeDraftFromFocus(sentence, blankCount, [match[1]], {
+        japanese: "話し手の判断・意志・義務・推量を助動詞で表した英文。",
+        tip: "この文で表している気持ちは義務? 推量? 許可? それを表す助動詞は? 助動詞の後ろの動詞の形は?",
+        explanation: "助動詞は動詞の前に置いて話し手の気持ちや判断を加える。助動詞の後ろには動詞の原形を置く。must は義務・確信、can は能力・許可、should は当然・忠告を表す。",
+        wordsToUse: "must / can / should / may / might / would / could / have to",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("comparative"),
+    detector: (sentence) => tokenPatterns.comparative.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const compWords = sentence.match(/\b(more|most|less|least|better|best|worse|worst|fewer|fewest|than|as)\b/gi) ?? [];
+      return makeDraftFromFocus(sentence, blankCount, compWords, {
+        japanese: "二つ以上のものの程度を比べている英文。",
+        tip: "比べているものは何と何? 「より〜」は比較級、「最も〜」は最上級、「同じくらい〜」は原級で表すが、この文はどれ?",
+        explanation: "比較級は more + 形容詞 または 形容詞 + -er で表し than と使う。最上級は most + 形容詞 または 形容詞 + -est。同等比較は as ~ as を使う。",
+        wordsToUse: "more / most / -er / -est / than / as ~ as / less / fewer",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("negation"),
+    detector: (sentence) => tokenPatterns.negation.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const negWords = sentence.match(/\b(not|never|no|nobody|nothing|nowhere|hardly|scarcely|seldom|rarely|without|few|little)\b/gi) ?? [];
+      return makeDraftFromFocus(sentence, blankCount, negWords, {
+        japanese: "否定を表す語句が使われている英文。",
+        tip: "どの語が否定の意味を担っている? not 以外の否定語は? 準否定語(hardly/seldomなど)の意味は?",
+        explanation: "否定文では not だけでなく never / no / hardly / scarcely / seldom など準否定語も否定の意味を表す。二重否定に注意。",
+        wordsToUse: "not / never / no / hardly / scarcely / seldom / rarely / without",
       });
     },
   },
@@ -425,9 +482,131 @@ const grammarFocuses: GrammarFocus[] = [
       return makeDraftFromFocus(sentence, blankCount, preferred, {
         japanese: "人ではない主語が、結果や変化を引き起こしている英文。",
         tip: "主語は人? 物・出来事・仕組み? その主語が何を引き起こすと考える? 日本語では副詞句のように訳すと自然では?",
-        explanation:
-          "無生物主語では、物・出来事・制度などを主語にし、その主語が人や状況に与える影響を動詞で表す。日本語では「〜によって」「〜のおかげで」のように訳すことが多い。",
-        wordsToUse: "inanimate subject / make / allow / prevent / cause / result",
+        explanation: "無生物主語では、物・出来事・制度などを主語にし、その主語が人や状況に与える影響を動詞で表す。日本語では「〜によって」「〜のおかげで」のように訳すことが多い。",
+        wordsToUse: "inanimate subject / make / allow / prevent / cause / enable / result",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("conjunction"),
+    detector: (sentence) => tokenPatterns.conjunction.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const match = sentence.match(tokenPatterns.conjunction);
+      const preferred = match ? [match[1] ?? "if"] : ["because", "although", "while"];
+      return makeDraftFromFocus(sentence, blankCount, preferred, {
+        japanese: "接続詞が節と節をつないでいる英文。",
+        tip: "接続詞が表す意味は時? 条件? 原因? 譲歩? その接続詞が導く節の中の動詞の形は?",
+        explanation: "接続詞は二つの節をつなぐ。時・条件を表す副詞節(when/if/until)では、未来でも現在形を使う。",
+        wordsToUse: "when / if / because / although / while / since / until / unless / after / before",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("interrogative"),
+    detector: (sentence) => tokenPatterns.interrogative.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const match = sentence.match(tokenPatterns.interrogative);
+      const preferred = match ? [match[1]] : ["what", "how"];
+      return makeDraftFromFocus(sentence, blankCount, preferred, {
+        japanese: "疑問詞を含む文で、何を尋ねているかを考える英文。",
+        tip: "疑問詞は文中でどんな役割をしている? 間接疑問文なら語順はどうなる(疑問詞+平叙文の語順)?",
+        explanation: "疑問詞(what/who/where/when/why/how)は文頭に置いて疑問文を作る。間接疑問では疑問詞 + 平叙文の語順になる。",
+        wordsToUse: "what / who / where / when / why / how / which",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("infinitive"),
+    detector: (sentence) => tokenPatterns.infinitive.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const match = sentence.match(tokenPatterns.infinitive);
+      if (!match) return null;
+      return makeDraftFromFocus(sentence, blankCount, [match[1], match[2]], {
+        japanese: "to do のまとまりが文中で働いている英文。",
+        tip: "to の後ろに続く動詞の形は? to do のまとまりは文の中で何の役割をしている(名詞的/形容詞的/副詞的用法)?",
+        explanation: "不定詞は to + 動詞の原形で表す。名詞・形容詞・副詞のように働き、文脈によって意味を判断する。",
+        wordsToUse: "to / base verb / purpose / adjective use / noun use",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("gerund"),
+    detector: (sentence) => tokenPatterns.gerund.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const match = sentence.match(tokenPatterns.gerund);
+      const preferred = match ? [match[2] ?? match[3] ?? ""].filter(Boolean) : [];
+      return makeDraftFromFocus(sentence, blankCount, preferred, {
+        japanese: "動詞の -ing 形が名詞として働いている英文。",
+        tip: "-ing 形が文の中で主語・目的語・補語のどれになっている? 動名詞と不定詞で意味が変わる動詞は?",
+        explanation: "動名詞は動詞の原形 + -ing で「〜すること」を表す名詞。主語・補語・目的語になれる。enjoy / finish / stop / avoid などは動名詞のみを目的語に取る。",
+        wordsToUse: "doing / enjoy / finish / stop / mind / avoid / consider",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("participle"),
+    detector: (sentence) => tokenPatterns.participle.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const match = sentence.match(tokenPatterns.participle);
+      const preferred = match ? [match[1]] : [];
+      return makeDraftFromFocus(sentence, blankCount, preferred, {
+        japanese: "分詞が名詞を修飾するか、分詞構文として使われている英文。",
+        tip: "分詞が修飾している名詞は? 名詞と分詞の関係は能動(〜している)か受動(〜された)か?",
+        explanation: "現在分詞(doing)は「〜している」、過去分詞(done)は「〜された」の意味で名詞を修飾する。分詞構文では接続詞+主語を省略して分詞で副詞節の意味を表す。",
+        wordsToUse: "doing / done / present participle / past participle / 分詞構文",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("noun-construction"),
+    detector: (sentence) => tokenPatterns.nounConstruction.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const match = sentence.match(tokenPatterns.nounConstruction);
+      const preferred = match ? [match[1]] : [];
+      return makeDraftFromFocus(sentence, blankCount, preferred, {
+        japanese: "動詞・形容詞を名詞化して表現している英文。",
+        tip: "日本語の動詞や形容詞が英語でどんな名詞に変わっている? of の後ろには何が来る?",
+        explanation: "名詞構文では動詞・形容詞を名詞化（-tion / -ness / -ment など）して表現する。日本語の動詞文を英語では名詞中心の文で表すことが多い。",
+        wordsToUse: "-tion / -ness / -ment / -ity / -ance / of",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("preposition"),
+    detector: (sentence) => tokenPatterns.preposition.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const prepWords = sentence.match(/\b(in|on|at|by|with|for|from|of|about|into|through|during|after|before|between|among|over|under|near|around)\b/gi) ?? [];
+      return makeDraftFromFocus(sentence, blankCount, prepWords.slice(0, blankCount * 2), {
+        japanese: "前置詞が正確に使われているかを問う英文。",
+        tip: "空欄の前後から、場所・時・手段・理由のどれを表しているか判断できる? その意味を表す前置詞は?",
+        explanation: "前置詞は名詞の前に置いて場所・時・手段・方向などを表す。in / on / at の使い分けや、動詞・形容詞と結びつく前置詞に注目する。",
+        wordsToUse: "in / on / at / by / with / for / to / from / of / about",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("pronoun"),
+    detector: (sentence) => tokenPatterns.pronoun.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const pronounWords = sentence.match(/\b(it|one|that|those|this|these|they|their|them|he|she|his|her|its|we|our|us|you|your)\b/gi) ?? [];
+      return makeDraftFromFocus(sentence, blankCount, pronounWords.slice(0, blankCount * 2), {
+        japanese: "代名詞が何を指しているか、または適切な代名詞の形を問う英文。",
+        tip: "この代名詞は何を指している? 人称・数・格は正しい形になっている? it と one の使い分けは?",
+        explanation: "代名詞は名詞の代わりに使う語。it / one / that の使い分け、人称・数・格(主格/目的格/所有格)の一致に注目する。",
+        wordsToUse: "it / one / that / those / this / they / their / him / her",
+      });
+    },
+  },
+  {
+    ...getGrammarOption("tense"),
+    detector: (sentence) => tokenPatterns.tense.test(sentence),
+    blanker: (sentence, blankCount) => {
+      const tenseWords = sentence.match(/\b(was|were|is|are|am|will|yesterday|tomorrow|now|ago|last|next)\b/gi) ?? [];
+      return makeDraftFromFocus(sentence, blankCount, tenseWords, {
+        japanese: "時を表す語句と動詞の形の対応を考える英文。",
+        tip: "この文はいつの出来事・状態を表している? 時を示す語句はどれ? その時間に合う動詞の形は?",
+        explanation: "時制問題では、まず時を表す語句や文脈を見つけ、現在・過去・未来のどれで捉えるかを決める。",
+        wordsToUse: "present / past / future / tense marker / yesterday / tomorrow / ago",
       });
     },
   },
@@ -440,8 +619,8 @@ function splitIntoSentences(input: string) {
     .filter(Boolean);
 }
 
-function fallbackExercise(sentence: string, blankCount: number, grammarId: GrammarId = "structure"): ExerciseDraft {
-  const option = getGrammarOption(grammarId === "auto" ? "structure" : grammarId);
+function fallbackExercise(sentence: string, blankCount: number, grammarId: GrammarId = "tense"): ExerciseDraft {
+  const option = getGrammarOption(grammarId === "auto" ? "tense" : grammarId);
   const preferredWords = option.id === "inanimate-subject" ? ["make", "allow", "prevent", "cause"] : [];
 
   return makeDraftFromFocus(sentence, blankCount, preferredWords, {
@@ -464,7 +643,7 @@ function resolveFocus(sentence: string, grammarId: GrammarId) {
 function makeExercise(sentence: string, grammarId: GrammarId, blankCount: number) {
   const focus = resolveFocus(sentence, grammarId);
   const draft = focus?.blanker(sentence, blankCount) ?? fallbackExercise(sentence, blankCount, grammarId);
-  const option = focus ?? getGrammarOption(grammarId === "auto" ? "structure" : grammarId);
+  const option = focus ?? getGrammarOption(grammarId === "auto" ? "tense" : grammarId);
 
   return {
     sentence,
