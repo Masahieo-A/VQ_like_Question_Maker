@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Lesson Prep Agent",
-  description: "教科書PDFから配布物・スライド・語彙表を自動生成",
+  title: "Insight-Style Grammar Maker",
+  description: "英文から思考のヒント付き空欄補充問題を生成",
 };
 
 export default function RootLayout({
@@ -16,14 +16,14 @@ export default function RootLayout({
         <div className="app-shell">
           <header className="header">
             <div>
-              <p className="app-title">Lesson Prep Agent</p>
+              <p className="app-title">Insight-Style Grammar Maker</p>
               <p className="app-subtitle">
-                教科書PDFをアップロードして配布物・スライド・語彙表を生成
+                英文法の「考え方」を問う空欄補充問題を生成
               </p>
             </div>
-            <button className="ghost-button" type="button">
-              スタイル設定
-            </button>
+            <a className="ghost-button" href="#generated-exercises">
+              生成例を見る
+            </a>
           </header>
           <main className="content">{children}</main>
         </div>
