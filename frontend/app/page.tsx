@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { buildFewShotPrompt, selectSimilarExamples } from "../lib/insightDataset";
 
 type GrammarId =
   | "auto"
@@ -38,6 +39,12 @@ type ExerciseDraft = {
 type SentenceSetting = {
   grammarId: GrammarId;
   blankCount: number;
+};
+
+type ApiGenerationResult = {
+  sentence: string;
+  mode: "openai" | "dataset-only";
+  generated: unknown;
 };
 
 const fewShotExamples = [
@@ -138,6 +145,106 @@ const grammarOptions: GrammarOption[] = [
     keywords: "SVOC / 前置詞 / 語法",
   },
 ];
+
+
+const translationDictionary: Record<string, string> = {
+  "self-driving cars will make transportation safer":
+    "自動運転車は交通をより安全にするだろう。",
+  "she has lived in kyoto for three years":
+    "彼女は京都に3年間住んでいる。",
+  "if it rains tomorrow, we will stay home":
+    "もし明日雨が降れば、私たちは家にいるだろう。",
+  "i am studying english now": "私は今、英語を勉強している。",
+};
+
+const pronounTranslations: Record<string, string> = {
+  i: "私は",
+  you: "あなたは",
+  he: "彼は",
+  she: "彼女は",
+  we: "私たちは",
+  they: "彼らは",
+  it: "それは",
+};
+
+const nounTranslations: Record<string, string> = {
+  english: "英語",
+  kyoto: "京都",
+  transportation: "交通",
+  home: "家",
+  cars: "車",
+  flowers: "花",
+  music: "音楽",
+  safer: "より安全",
+  safe: "安全",
+};
+
+const verbTranslations: Record<string, string> = {
+  study: "勉強する",
+  studying: "勉強している",
+  live: "住む",
+  lived: "住んでいる",
+  make: "〜を作る / 〜にする",
+  stay: "いる",
+  rain: "雨が降る",
+  rains: "雨が降る",
+};
+
+function normalizeSentence(sentence: string) {
+  return sentence.toLowerCase().replace(/[.!?]$/g, "").trim();
+}
+
+function translateKnownWords(text: string) {
+  return text
+    .replace(/[.!?]$/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => {
+      const normalized = word.toLowerCase().replace(/[^a-z-]/g, "");
+      return pronounTranslations[normalized] ?? nounTranslations[normalized] ?? verbTranslations[normalized] ?? word;
+    })
+    .join("");
+}
+
+function translateSentence(sentence: string): string {
+  const normalized = normalizeSentence(sentence);
+  const dictionaryTranslation = translationDictionary[normalized];
+  if (dictionaryTranslation) {
+    return dictionaryTranslation;
+  }
+
+  const ifMatch = sentence.match(/^If\s+(.+?),\s*(.+)$/i);
+  if (ifMatch) {
+    return `もし「${translateSentence(ifMatch[1])}」なら、「${translateSentence(ifMatch[2])}」。`;
+  }
+
+  const presentPerfectMatch = sentence.match(/^([A-Za-z]+)\s+(has|have)\s+(.+?)\s+for\s+(.+)$/i);
+  if (presentPerfectMatch) {
+    const subject = pronounTranslations[presentPerfectMatch[1].toLowerCase()] ?? presentPerfectMatch[1];
+    return `${subject}${presentPerfectMatch[4].replace(/[.!?]$/g, "")}の間、${translateKnownWords(presentPerfectMatch[3])}している。`;
+  }
+
+  const progressiveMatch = sentence.match(/^([A-Za-z]+)\s+(am|are|is)\s+([A-Za-z]+ing)\s+(.+)$/i);
+  if (progressiveMatch) {
+    const subject = pronounTranslations[progressiveMatch[1].toLowerCase()] ?? progressiveMatch[1];
+    const verb = verbTranslations[progressiveMatch[3].toLowerCase()] ?? `${progressiveMatch[3]}している`;
+    const object = translateKnownWords(progressiveMatch[4]);
+    return `${subject}${object}を${verb}。`;
+  }
+
+  const futureMakeMatch = sentence.match(/^(.+?)\s+will\s+make\s+(.+?)\s+(.+)$/i);
+  if (futureMakeMatch) {
+    return `${translateKnownWords(futureMakeMatch[1])}は${translateKnownWords(futureMakeMatch[2])}を${translateKnownWords(futureMakeMatch[3])}にするだろう。`;
+  }
+
+  const futureMatch = sentence.match(/^(.+?)\s+will\s+([A-Za-z]+)\s*(.*)$/i);
+  if (futureMatch) {
+    const verb = verbTranslations[futureMatch[2].toLowerCase()] ?? futureMatch[2];
+    return `${translateKnownWords(futureMatch[1])}は${translateKnownWords(futureMatch[3])}${verb}だろう。`;
+  }
+
+  return `日本語訳（自動下訳）: ${translateKnownWords(sentence.replace(/[.!?]$/g, ""))}`;
+}
 
 const tokenPatterns = {
   presentPerfect: /\b(has|have)\s+([a-z]+(?:ed|en)|been|done|gone|seen|written|known|lived|studied|visited|worked)\b/i,
@@ -365,19 +472,15 @@ function makeExercise(sentence: string, grammarId: GrammarId, blankCount: number
     description: option.description,
     requestedBlankCount: blankCount,
     ...draft,
+    japanese: translateSentence(sentence),
   };
 }
 
-function makeFewShotPrompt(input: string, grammarLabel: string, blankCountLabel: string) {
-  const examples = fewShotExamples
-    .map(
-      (example, index) =>
-        `例${index + 1}\n文法事項: ${example.focus}\n日本語: ${example.japanese}\n英文（穴埋め）: ${example.cloze}\n答え: ${example.answer}\nTip（思考誘導）: ${example.tip}`,
-    )
-    .join("\n\n");
-
-  return `あなたは高校英文法教材の作問者です。以下の例のトーンに合わせ、英文を空欄補充問題にします。\n\n${examples}\n\n制約:\n- 指定された文法事項を最優先し、同じ英文でも文法事項によって空欄位置とTipを変える。\n- 空欄数は指定数を目安にする。\n- 答えを直接教えすぎず、「何に注目するか」を疑問文で誘導する。\n- 解説は、なぜその形になるかを簡潔に述べる。\n\n文法事項: ${grammarLabel}\n空欄数: ${blankCountLabel}\n入力英文:\n${input}`;
+function makeFewShotPrompt(input: string, grammarId: GrammarId, grammarLabel: string, blankCount: number) {
+  const examples = selectSimilarExamples(input, grammarId, blankCount, 4);
+  return buildFewShotPrompt(input, grammarLabel, blankCount, examples);
 }
+
 
 export default function HomePage() {
   const [input, setInput] = useState(sampleInput);
@@ -385,6 +488,9 @@ export default function HomePage() {
   const [bulkGrammarId, setBulkGrammarId] = useState<GrammarId>("auto");
   const [bulkBlankCount, setBulkBlankCount] = useState(2);
   const [sentenceSettings, setSentenceSettings] = useState<Record<number, SentenceSetting>>({});
+  const [apiResults, setApiResults] = useState<ApiGenerationResult[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const sentences = useMemo(() => splitIntoSentences(input), [input]);
 
   const exercises = useMemo(
@@ -402,9 +508,44 @@ export default function HomePage() {
       settingMode === "bulk"
         ? getGrammarOption(bulkGrammarId).label
         : "文ごとに個別指定";
-    const blankCountLabel = settingMode === "bulk" ? `${bulkBlankCount}個` : "文ごとに個別指定";
-    return makeFewShotPrompt(input, grammarLabel, blankCountLabel);
+    return makeFewShotPrompt(input, bulkGrammarId, grammarLabel, bulkBlankCount);
   }, [bulkBlankCount, bulkGrammarId, input, settingMode]);
+
+
+  async function generateWithApi() {
+    setIsGenerating(true);
+    setApiError(null);
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: sentences.map((sentence, index) => {
+            const individual = sentenceSettings[index];
+            const grammarId = settingMode === "individual" ? individual?.grammarId ?? bulkGrammarId : bulkGrammarId;
+            const blankCount = settingMode === "individual" ? individual?.blankCount ?? bulkBlankCount : bulkBlankCount;
+            return {
+              sentence,
+              grammarId,
+              grammarLabel: getGrammarOption(grammarId).label,
+              blankCount,
+            };
+          }),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API generation failed: ${response.status}`);
+      }
+
+      const data = (await response.json()) as { results: ApiGenerationResult[] };
+      setApiResults(data.results);
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "API generation failed");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   function updateSentenceSetting(index: number, patch: Partial<SentenceSetting>) {
     setSentenceSettings((current) => ({
@@ -573,10 +714,26 @@ export default function HomePage() {
       </section>
 
       <section className="panel prompt-preview">
-        <div className="section-heading">
-          <p className="eyebrow">Few-shot prompt</p>
-          <h2>参照トーン</h2>
+        <div className="section-heading prompt-heading">
+          <div>
+            <p className="eyebrow">Few-shot prompt</p>
+            <h2>参照トーン</h2>
+          </div>
+          <button className="primary-button" type="button" onClick={generateWithApi} disabled={isGenerating}>
+            {isGenerating ? "生成中..." : "OpenAI APIで生成"}
+          </button>
         </div>
+        {apiError ? <p className="api-error">{apiError}</p> : null}
+        {apiResults.length > 0 ? (
+          <div className="api-result-list">
+            {apiResults.map((result, index) => (
+              <div className="api-result-card" key={`${result.sentence}-${index}`}>
+                <p>{result.mode === "openai" ? "OpenAI生成" : "DB類似例のみ（OPENAI_API_KEY未設定）"}</p>
+                <pre>{JSON.stringify(result.generated ?? result, null, 2)}</pre>
+              </div>
+            ))}
+          </div>
+        ) : null}
         <pre>{prompt}</pre>
       </section>
 

@@ -441,3 +441,63 @@ select:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.prompt-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.api-error {
+  margin-bottom: 12px;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.api-result-list {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.api-result-card {
+  border: 1px solid #fedf89;
+  border-radius: 14px;
+  background: #fffbeb;
+  padding: 12px;
+}
+
+.api-result-card p {
+  color: #b54708;
+  font-size: 12px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.api-result-card pre {
+  max-height: 220px;
+}
+
+.primary-button {
+  background: #3557ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
